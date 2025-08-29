@@ -1,8 +1,25 @@
 "use client";
 
 import Image from "next/image";
-import Script from "next/script";
 import { useMemo, useState, useEffect } from "react";
+
+/* ---------------------------------- TYPES ---------------------------------- */
+
+type SortKey = "spins" | "wager" | "az";
+
+interface TelegramWebApp {
+  ready: () => void;
+  expand: () => void;
+  setHeaderColor: (colorKey: string) => void;
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp;
+    };
+  }
+}
 
 /* ---------------------------------- DATA ---------------------------------- */
 
@@ -11,11 +28,11 @@ type CasinoOffer = {
   brand: string;
   offer: string;
   spins: number;
-  wagering: string; // e.g. "40x" | "35x" | "No wagering"
+  wagering: string;
   link: string;
-  logo: string; // /logos/*.png|jpg
+  logo: string;
   pill?: "NEW" | "HOT";
-  note?: string; // e.g. "Deposit required"
+  note?: string;
 };
 
 const OFFERS: CasinoOffer[] = [
@@ -33,7 +50,6 @@ const OFFERS: CasinoOffer[] = [
   {
     id: "bitstarz",
     brand: "BitStarz",
-    // from your screenshot: 100% up to €100 + 180 Free Spins
     offer: "100% up to €100 + 180 Free Spins",
     wagering: "40x",
     link: "https://bzstarz.com/b857ede1d",
@@ -45,7 +61,6 @@ const OFFERS: CasinoOffer[] = [
   {
     id: "wildio",
     brand: "Wild.io",
-    // from your screenshot: 120% up to $5,000 + 75 Free Spins
     offer: "120% up to $5,000 + 75 Free Spins",
     wagering: "40x",
     link: "https://wildpartners.app/a1516a206",
@@ -56,7 +71,6 @@ const OFFERS: CasinoOffer[] = [
   {
     id: "betsio",
     brand: "Bets.io",
-    // from your screenshot: 225% + 225 Free Spins
     offer: "225% + 225 Free Spins",
     wagering: "35x",
     link: "https://bts-link.com/?serial=23576&creative_id=326&anid=",
@@ -67,10 +81,9 @@ const OFFERS: CasinoOffer[] = [
   {
     id: "1xbit",
     brand: "1xBit.com",
-    // from your screenshot: Up to 7 BTC + 250 Free Spins
     offer: "Up to 7 BTC + 250 Free Spins",
     wagering: "35x",
-    link: "https://refpa04636.pro/L?tag=b_4668433m_102262c_&site=4668433&ad=102262",
+    link: "https://refpa04636.pro/L?tag=b_4668433m_61569c_&site=4668433&ad=61569",
     logo: "/logos/1xbit.jpg",
     spins: 250,
     note: "Deposit required",
@@ -97,9 +110,8 @@ function wageringToNumber(w: string) {
 /* -------------------------------- COMPONENT -------------------------------- */
 
 export default function Home() {
-  // Telegram Mini App init (safe no-op in browser)
   useEffect(() => {
-    const tg = (window as any)?.Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp;
     if (!tg) return;
     tg.ready();
     tg.expand();
@@ -107,7 +119,7 @@ export default function Home() {
   }, []);
 
   const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"spins" | "wager" | "az">("spins");
+  const [sortBy, setSortBy] = useState<SortKey>("spins");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -144,7 +156,7 @@ export default function Home() {
             </p>
           </div>
 
-        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 border border-emerald-100">
               Crypto casinos
             </span>
@@ -178,7 +190,7 @@ export default function Home() {
             <select
               className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-300"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
             >
               <option value="spins">Most spins</option>
               <option value="wager">Lowest wagering</option>
@@ -191,8 +203,7 @@ export default function Home() {
       {/* Table */}
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-6 pb-16">
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          {/* Header row */}
-          <div className="grid grid-cols-[2fr_2fr_1fr_120px] sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50">
+          <div className="grid grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50">
             <div>Casino</div>
             <div>Offer</div>
             <div>Wagering</div>
@@ -203,7 +214,7 @@ export default function Home() {
             {filtered.map((o) => (
               <li
                 key={o.id}
-                className="grid grid-cols-[2fr_2fr_1fr_120px] sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-4"
+                className="grid grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-4"
               >
                 {/* Brand + logo */}
                 <div className="flex items-center gap-3">
@@ -249,15 +260,15 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Bonus button */}
+                {/* Visit */}
                 <div className="text-right">
                   <a
                     href={o.link}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="inline-flex items-center justify-center rounded-xl bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap text-[13px] sm:text-sm h-10 px-3 sm:px-4 shadow-sm active:scale-[.99] transition"
+                    className="inline-flex items-center justify-center w-full rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[15px] font-extrabold leading-none h-[48px] px-5 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition text-center"
                   >
-                    Claim&nbsp;Bonus!
+                    Claim Bonus!
                   </a>
                 </div>
               </li>
@@ -279,13 +290,9 @@ export default function Home() {
           <span className="mx-1 underline decoration-neutral-300">BeGambleAware.org</span>
           or
           <span className="mx-1 underline decoration-neutral-300">Gambling Therapy</span>.
-          <br />
-          Note: the “Claim Bonus!” buttons are affiliate links — we may earn a commission if you sign up or deposit.
+          The “Claim Bonus!” buttons are affiliate links — we may earn a commission if you sign up or deposit.
         </p>
       </main>
-
-      {/* Telegram SDK (safe if not in Telegram) */}
-      <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
     </div>
   );
 }
