@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 const casinos = [
@@ -56,11 +55,11 @@ const casinos = [
 ];
 
 export default function Home() {
-  // Ensure BitStarz (topPick) is always first
+  // Ensure BitStarz is always at the top
   const sortedCasinos = [...casinos].sort((a, b) => (b.topPick ? 1 : 0) - (a.topPick ? 1 : 0));
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-200 via-purple-100 to-blue-200 p-6">
+    <div className="min-h-screen bg-gradient-to-r from-purple-200 via-purple-100 to-blue-200 p-6 flex flex-col">
       {/* Follow us on X */}
       <div className="flex justify-center items-center mb-6">
         <a
@@ -83,7 +82,7 @@ export default function Home() {
       </p>
 
       {/* Casino Cards */}
-      <div className="space-y-4 max-w-3xl mx-auto">
+      <div className="space-y-4 max-w-3xl mx-auto flex-1">
         {sortedCasinos.map((c) => (
           <div
             key={c.id}
@@ -138,6 +137,23 @@ export default function Home() {
           </div>
         ))}
       </div>
+
+      {/* Disclaimer / T&Cs */}
+      <footer className="text-center text-xs text-gray-500 mt-8 max-w-4xl mx-auto">
+        <p>
+          This app promotes online gambling services intended for adults aged 18+ only. Gambling may be restricted in your
+          region — please check local laws before participating. Play responsibly and seek help if needed. For free
+          support, visit{" "}
+          <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="underline">
+            BeGambleAware
+          </a>{" "}
+          or{" "}
+          <a href="https://www.gamblingtherapy.org" target="_blank" rel="noopener noreferrer" className="underline">
+            Gambling Therapy
+          </a>
+          . The “Claim Bonus!” buttons are affiliate links — we may earn a commission if you sign up or deposit.
+        </p>
+      </footer>
 
       <Analytics />
     </div>
