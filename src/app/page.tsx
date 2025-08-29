@@ -11,6 +11,7 @@ interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   setHeaderColor: (colorKey: string) => void;
+  openLink?: (url: string) => void;
 }
 
 declare global {
@@ -112,10 +113,13 @@ function wageringToNumber(w: string) {
 export default function Home() {
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    if (!tg) return;
+    if (!tg) return; // safe if opened in a normal browser
     tg.ready();
     tg.expand();
     tg.setHeaderColor("secondary_bg_color");
+
+    // Match Telegram theme background to avoid “framed” look
+    document.body.style.backgroundColor = "var(--tg-theme-bg-color)";
   }, []);
 
   const [query, setQuery] = useState("");
@@ -127,16 +131,22 @@ export default function Home() {
       q ? o.brand.toLowerCase().includes(q) : true
     );
     if (sortBy === "spins") {
-      rows = rows.sort((a, b) => b.spins - a.spins);
+      rows = [...rows].sort((a, b) => b.spins - a.spins);
     } else if (sortBy === "wager") {
-      rows = rows.sort(
+      rows = [...rows].sort(
         (a, b) => wageringToNumber(a.wagering) - wageringToNumber(b.wagering)
       );
     } else {
-      rows = rows.sort((a, b) => a.brand.localeCompare(b.brand));
+      rows = [...rows].sort((a, b) => a.brand.localeCompare(b.brand));
     }
     return rows;
   }, [query, sortBy]);
+
+  const openBonus = (url: string) => {
+    const tg = window.Telegram?.WebApp;
+    if (tg?.openLink) tg.openLink(url);
+    else window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
@@ -203,7 +213,8 @@ export default function Home() {
       {/* Table */}
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-6 pb-16">
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <div className="grid grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50">
+          {/* Header row hidden on mobile */}
+          <div className="hidden sm:grid sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50">
             <div>Casino</div>
             <div>Offer</div>
             <div>Wagering</div>
@@ -214,7 +225,7 @@ export default function Home() {
             {filtered.map((o) => (
               <li
                 key={o.id}
-                className="grid grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-4"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-4"
               >
                 {/* Brand + logo */}
                 <div className="flex items-center gap-3">
@@ -248,7 +259,7 @@ export default function Home() {
                 </div>
 
                 {/* Wagering */}
-                <div>
+                <div className="sm:justify-self-start">
                   {o.wagering.toLowerCase().includes("no") ? (
                     <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-[3px] border border-emerald-100">
                       No wagering
@@ -261,15 +272,13 @@ export default function Home() {
                 </div>
 
                 {/* Visit */}
-                <div className="text-right">
-                  <a
-                    href={o.link}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
+                <div className="sm:text-right">
+                  <button
+                    onClick={() => openBonus(o.link)}
                     className="inline-flex items-center justify-center w-full rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[15px] font-extrabold leading-none h-[48px] px-5 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition text-center"
                   >
                     Claim Bonus!
-                  </a>
+                  </button>
                 </div>
               </li>
             ))}
