@@ -13,7 +13,9 @@ interface TelegramWebApp {
   setHeaderColor: (colorKey: string) => void;
 }
 declare global {
-  interface Window { Telegram?: { WebApp?: TelegramWebApp }; }
+  interface Window {
+    Telegram?: { WebApp?: TelegramWebApp };
+  }
 }
 
 /* ---------------------------------- TAGS UI ---------------------------------- */
@@ -23,9 +25,16 @@ const TAG_LABEL: Record<Tag, string> = {
 };
 
 function TagChip({
-  tag, active, onClick,
-}: { tag: Tag; active: boolean; onClick: (t: Tag) => void }) {
-  const base = "inline-flex items-center rounded-full border text-xs font-medium px-3 py-1 transition";
+  tag,
+  active,
+  onClick,
+}: {
+  tag: Tag;
+  active: boolean;
+  onClick: (t: Tag) => void;
+}) {
+  const base =
+    "inline-flex items-center rounded-full border text-xs font-medium px-3 py-1 transition";
   const activeCls =
     tag === "crypto"
       ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
@@ -35,8 +44,12 @@ function TagChip({
       ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
       : "bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100";
   return (
-    <button type="button" aria-pressed={active}
-      onClick={() => onClick(tag)} className={`${base} ${active ? activeCls : idleCls}`}>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={() => onClick(tag)}
+      className={`${base} ${active ? activeCls : idleCls}`}
+    >
       {TAG_LABEL[tag]}
     </button>
   );
@@ -44,22 +57,84 @@ function TagChip({
 
 /* ---------------------------------- DATA ---------------------------------- */
 type CasinoOffer = {
-  id: string; brand: string; offer: string; spins: number; wagering: string;
-  link: string; logo: string; pill?: "NEW" | "HOT"; note?: string; tags: Tag[];
+  id: string;
+  brand: string;
+  offer: string;
+  spins: number;
+  wagering: string;
+  link: string;
+  logo: string;
+  pill?: "NEW" | "HOT";
+  note?: string;
+  tags: Tag[];
 };
 
 const OFFERS: CasinoOffer[] = [
-  { id: "winz", brand: "Winz.io", offer: "300 Free Spins", wagering: "No wagering", link: "https://winzmedia.top/a8a3d95da", logo: "/logos/winzio.png", pill: "NEW", spins: 300, note: "Deposit required", tags: ["crypto", "verified"] },
-  { id: "1xbit", brand: "1xBit.com", offer: "Up to 7 BTC + 250 Free Spins", wagering: "35x", link: "https://refpa04636.pro/L?tag=b_4668433m_61569c_&site=4668433&ad=61569", logo: "/logos/1xbit.jpg", spins: 250, note: "Deposit required", tags: ["crypto"] },
-  { id: "betsio", brand: "Bets.io", offer: "225% + 225 Free Spins", wagering: "35x", link: "https://bts-link.com/?serial=23576&creative_id=326&anid=", logo: "/logos/betsio.png", spins: 225, note: "Deposit required", tags: ["crypto", "verified"] },
-  { id: "bitstarz", brand: "BitStarz", offer: "100% up to €100 + 180 Free Spins", wagering: "40x", link: "https://bzstarz.com/b857ede1d", logo: "/logos/bitstarz.png", pill: "HOT", spins: 180, note: "Deposit required", tags: ["crypto", "verified"] },
-  { id: "wildio", brand: "Wild.io", offer: "120% up to $5,000 + 75 Free Spins", wagering: "40x", link: "https://wildpartners.app/a1516a206", logo: "/logos/wildio.png", spins: 75, note: "Deposit required", tags: ["crypto", "verified"] },
+  {
+    id: "winz",
+    brand: "Winz.io",
+    offer: "300 Free Spins",
+    wagering: "No wagering",
+    link: "https://winzmedia.top/a8a3d95da",
+    logo: "/logos/winzio.png",
+    pill: "NEW",
+    spins: 300,
+    note: "Deposit required",
+    tags: ["crypto", "verified"],
+  },
+  {
+    id: "1xbit",
+    brand: "1xBit.com",
+    offer: "Up to 7 BTC + 250 Free Spins",
+    wagering: "35x",
+    link: "https://refpa04636.pro/L?tag=b_4668433m_61569c_&site=4668433&ad=61569",
+    logo: "/logos/1xbit.jpg",
+    spins: 250,
+    note: "Deposit required",
+    tags: ["crypto"],
+  },
+  {
+    id: "betsio",
+    brand: "Bets.io",
+    offer: "225% + 225 Free Spins",
+    wagering: "35x",
+    link: "https://bts-link.com/?serial=23576&creative_id=326&anid=",
+    logo: "/logos/betsio.png",
+    spins: 225,
+    note: "Deposit required",
+    tags: ["crypto", "verified"],
+  },
+  {
+    id: "bitstarz",
+    brand: "BitStarz",
+    offer: "100% up to €100 + 180 Free Spins",
+    wagering: "40x",
+    link: "https://bzstarz.com/b857ede1d",
+    logo: "/logos/bitstarz.png",
+    pill: "HOT",
+    spins: 180,
+    note: "Deposit required",
+    tags: ["crypto", "verified"],
+  },
+  {
+    id: "wildio",
+    brand: "Wild.io",
+    offer: "120% up to $5,000 + 75 Free Spins",
+    wagering: "40x",
+    link: "https://wildpartners.app/a1516a206",
+    logo: "/logos/wildio.png",
+    spins: 75,
+    note: "Deposit required",
+    tags: ["crypto", "verified"],
+  },
 ];
 
 /* --------------------------------- HELPERS -------------------------------- */
 function pillClasses(pill?: CasinoOffer["pill"]) {
-  if (pill === "NEW") return "text-[11px] px-2 py-[3px] rounded-full bg-purple-100 text-purple-700 border border-purple-200";
-  if (pill === "HOT") return "text-[11px] px-2 py-[3px] rounded-full bg-rose-100 text-rose-700 border border-rose-200";
+  if (pill === "NEW")
+    return "text-[11px] px-2 py-[3px] rounded-full bg-purple-100 text-purple-700 border border-purple-200";
+  if (pill === "HOT")
+    return "text-[11px] px-2 py-[3px] rounded-full bg-rose-100 text-rose-700 border border-rose-200";
   return "";
 }
 function wageringToNumber(w: string) {
@@ -73,7 +148,9 @@ function wageringToNumber(w: string) {
 export default function Home() {
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    tg?.ready(); tg?.expand(); tg?.setHeaderColor("secondary_bg_color");
+    tg?.ready();
+    tg?.expand();
+    tg?.setHeaderColor("secondary_bg_color");
   }, []);
 
   const [query, setQuery] = useState("");
@@ -81,23 +158,23 @@ export default function Home() {
   const [activeTags, setActiveTags] = useState<Set<Tag>>(new Set());
 
   const toggleTag = (t: Tag) =>
-    setActiveTags(prev => {
+    setActiveTags((prev) => {
       const n = new Set(prev);
       n.has(t) ? n.delete(t) : n.add(t);
       return n;
     });
 
-  // ✅ THIS is the piece that must exist before you render: 'filtered'
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let rows = OFFERS.filter(o => (q ? o.brand.toLowerCase().includes(q) : true));
+    let rows = OFFERS.filter((o) => (q ? o.brand.toLowerCase().includes(q) : true));
 
     if (activeTags.size > 0) {
-      rows = rows.filter(o => [...activeTags].every(t => o.tags.includes(t)));
+      rows = rows.filter((o) => [...activeTags].every((t) => o.tags.includes(t)));
     }
 
     if (sortBy === "spins") rows = [...rows].sort((a, b) => b.spins - a.spins);
-    else if (sortBy === "wager") rows = [...rows].sort((a, b) => wageringToNumber(a.wagering) - wageringToNumber(b.wagering));
+    else if (sortBy === "wager")
+      rows = [...rows].sort((a, b) => wageringToNumber(a.wagering) - wageringToNumber(b.wagering));
     else rows = [...rows].sort((a, b) => a.brand.localeCompare(b.brand));
 
     return rows;
@@ -107,27 +184,78 @@ export default function Home() {
     <div className="min-h-screen text-neutral-900 relative">
       {/* animated light purple/blue background + top fade */}
       <style jsx global>{`
-        html, body { height: 100%; }
-        body { background: none; }
+        html,
+        body {
+          height: 100%;
+        }
+        body {
+          background: none;
+        }
         body::before {
-          content: ""; position: fixed; inset: 0; z-index: -2;
-          background:
-            radial-gradient(900px 500px at 15% 10%, rgba(138,58,255,.20), transparent 60%),
-            radial-gradient(800px 420px at 85% 15%, rgba(99,102,241,.18), transparent 60%),
-            radial-gradient(1000px 520px at 40% 90%, rgba(59,130,246,.14), transparent 60%),
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -2;
+          background: radial-gradient(900px 500px at 15% 10%, rgba(138, 58, 255, 0.2), transparent 60%),
+            radial-gradient(800px 420px at 85% 15%, rgba(99, 102, 241, 0.18), transparent 60%),
+            radial-gradient(1000px 520px at 40% 90%, rgba(59, 130, 246, 0.14), transparent 60%),
             linear-gradient(-45deg, #f1eaff, #e7f0ff, #eadfff, #e6f2ff, #f1eaff);
           background-size: 200% 200%, 200% 200%, 200% 200%, 300% 300%;
-          animation: float1 22s ease-in-out infinite, float2 28s ease-in-out infinite, float3 26s ease-in-out infinite, sweep 32s linear infinite;
+          animation: float1 22s ease-in-out infinite, float2 28s ease-in-out infinite, float3 26s ease-in-out infinite,
+            sweep 32s linear infinite;
         }
         body::after {
-          content: ""; position: fixed; inset: 0 0 60% 0; z-index: -1;
-          background: linear-gradient(to bottom, rgba(255,255,255,.70), rgba(255,255,255,0));
+          content: "";
+          position: fixed;
+          inset: 0 0 60% 0;
+          z-index: -1;
+          background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
           pointer-events: none;
         }
-        @keyframes float1 { 0%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} 50%{background-position:70% 50%,10% 40%,30% 60%,100% 50%} 100%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} }
-        @keyframes float2 { 0%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} 50%{background-position:20% 30%,80% 20%,60% 70%,100% 50%} 100%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} }
-        @keyframes float3 { 0%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} 50%{background-position:40% 80%,10% 60%,80% 40%,100% 50%} 100%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} }
-        @keyframes sweep  { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes float1 {
+          0% {
+            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
+          }
+          50% {
+            background-position: 70% 50%, 10% 40%, 30% 60%, 100% 50%;
+          }
+          100% {
+            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
+          }
+        }
+        @keyframes float2 {
+          0% {
+            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
+          }
+          50% {
+            background-position: 20% 30%, 80% 20%, 60% 70%, 100% 50%;
+          }
+          100% {
+            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
+          }
+        }
+        @keyframes float3 {
+          0% {
+            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
+          }
+          50% {
+            background-position: 40% 80%, 10% 60%, 80% 40%, 100% 50%;
+          }
+          100% {
+            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
+          }
+        }
+        @keyframes sweep {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
       `}</style>
 
       {/* Header (glass) */}
@@ -144,26 +272,27 @@ export default function Home() {
               </p>
             </div>
 
+            {/* Clickable tag chips */}
             <div className="flex items-center gap-3">
               <TagChip tag="crypto" active={activeTags.has("crypto")} onClick={toggleTag} />
               <TagChip tag="verified" active={activeTags.has("verified")} onClick={toggleTag} />
             </div>
           </div>
 
-          {/* Search + Sort */}
+          {/* Search + Sort (fixed for small screens) */}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 min-w-0">
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search brand (e.g. Winz)"
-                  className="w-72 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm shadow-sm outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-300"
+                  className="w-full sm:w-72 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm shadow-sm outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-300"
                 />
               </div>
               <button
                 onClick={() => setQuery((q) => q.trim())}
-                className="rounded-xl bg-neutral-900 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-neutral-800 active:scale-[.99] transition"
+                className="flex-shrink-0 rounded-xl bg-neutral-900 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-neutral-800 active:scale-[.99] transition"
               >
                 Search
               </button>
@@ -185,17 +314,22 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Table (responsive for Telegram WebView) */}
+      {/* Table (responsive) */}
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-6 pb-16">
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white/85 backdrop-blur-sm shadow-sm">
           <div className="hidden sm:grid sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50/60">
-            <div>Casino</div><div>Offer</div><div>Wagering</div><div className="text-right">Bonus</div>
+            <div>Casino</div>
+            <div>Offer</div>
+            <div>Wagering</div>
+            <div className="text-right">Bonus</div>
           </div>
 
           <ul className="divide-y divide-neutral-200">
             {filtered.map((o) => (
-              <li key={o.id}
-                className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_140px] gap-y-3 sm:gap-y-0 items-center px-5 py-4">
+              <li
+                key={o.id}
+                className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_140px] gap-y-3 sm:gap-y-0 items-center px-5 py-4"
+              >
                 {/* Brand */}
                 <div className="flex items-center gap-3">
                   <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-neutral-200 bg-white">
