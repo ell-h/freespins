@@ -20,21 +20,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // Telegram adds inline styles to <html>; ignore SSR/CSR diffs here
+    <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Load Telegram Web App SDK before anything else */}
+        {/* Load Telegram Web App SDK globally */}
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>
