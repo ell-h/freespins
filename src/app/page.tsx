@@ -164,6 +164,7 @@ export default function Home() {
       return n;
     });
 
+  // Core filtering/sorting
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let rows = OFFERS.filter((o) => (q ? o.brand.toLowerCase().includes(q) : true));
@@ -179,6 +180,18 @@ export default function Home() {
 
     return rows;
   }, [query, sortBy, activeTags]);
+
+  // ----- Top Pick (BitStarz) -----
+  const TOP_PICK_ID = "bitstarz";
+  const topPick = useMemo(() => OFFERS.find((o) => o.id === TOP_PICK_ID), []);
+  const topPickInFiltered = useMemo(
+    () => filtered.find((o) => o.id === TOP_PICK_ID),
+    [filtered]
+  );
+  const rowsWithoutTopPick = useMemo(
+    () => filtered.filter((o) => o.id !== TOP_PICK_ID),
+    [filtered]
+  );
 
   return (
     <div className="min-h-screen text-neutral-900 relative">
@@ -272,14 +285,14 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Clickable tag chips */}
+            {/* Chips */}
             <div className="flex items-center gap-3">
               <TagChip tag="crypto" active={activeTags.has("crypto")} onClick={toggleTag} />
               <TagChip tag="verified" active={activeTags.has("verified")} onClick={toggleTag} />
             </div>
           </div>
 
-          {/* Search + Sort (fixed for small screens) */}
+          {/* Search + Sort */}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative flex-1 min-w-0">
@@ -314,8 +327,65 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Table (responsive) */}
+      {/* MAIN */}
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-6 pb-16">
+        {/* ------- TOP PICK (glowing green) ------- */}
+        {topPick && topPickInFiltered && (
+          <section
+            className="mb-6 rounded-2xl border border-emerald-300/60 bg-white/90 backdrop-blur-sm ring-2 ring-emerald-400/60 shadow-[0_0_0_8px_rgba(16,185,129,0.10),0_12px_28px_rgba(16,185,129,0.22)]"
+          >
+            <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold px-2 py-[3px] border border-emerald-200">
+                TOP PICK
+              </span>
+              <span className="text-xs text-emerald-700/85">Hand-picked by the FreeSpins.Casino team</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_140px] gap-y-3 sm:gap-y-0 items-center px-5 pb-4">
+              {/* Brand */}
+              <div className="flex items-center gap-3">
+                <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+                  <Image src={topPick.logo} alt={`${topPick.brand} logo`} fill sizes="36px" className="object-cover" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-neutral-900">{topPick.brand}</span>
+                  {topPick.pill && <span className={pillClasses(topPick.pill)}>{topPick.pill}</span>}
+                </div>
+              </div>
+
+              {/* Offer */}
+              <div>
+                <div className="font-medium">{topPick.offer}</div>
+                {topPick.note && <div className="text-xs text-neutral-500 mt-0.5">{topPick.note}</div>}
+              </div>
+
+              {/* Wagering */}
+              <div>
+                {topPick.wagering.toLowerCase().includes("no") ? (
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-[3px] border border-emerald-100">
+                    No wagering
+                  </span>
+                ) : (
+                  <span className="text-neutral-700 font-medium">{topPick.wagering}</span>
+                )}
+              </div>
+
+              {/* Button */}
+              <div className="sm:justify-self-end">
+                <a
+                  href={topPick.link}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center justify-center w-full sm:w-[140px] whitespace-nowrap rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[15px] font-extrabold leading-none h-[48px] px-5 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition text-center"
+                >
+                  Claim Bonus!
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ------- TABLE (list) ------- */}
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white/85 backdrop-blur-sm shadow-sm">
           <div className="hidden sm:grid sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50/60">
             <div>Casino</div>
@@ -325,7 +395,7 @@ export default function Home() {
           </div>
 
           <ul className="divide-y divide-neutral-200">
-            {filtered.map((o) => (
+            {rowsWithoutTopPick.map((o) => (
               <li
                 key={o.id}
                 className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_140px] gap-y-3 sm:gap-y-0 items-center px-5 py-4"
@@ -372,7 +442,7 @@ export default function Home() {
               </li>
             ))}
 
-            {filtered.length === 0 && (
+            {rowsWithoutTopPick.length === 0 && (
               <li className="px-5 py-10 text-center text-neutral-500">No results for “{query}”</li>
             )}
           </ul>
