@@ -6,6 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 /* ---------------------------------- TYPES ---------------------------------- */
 type SortKey = "spins" | "wager" | "az";
 type Tag = "crypto" | "verified";
+type Coin = "btc" | "eth" | "sol" | "usdt";
 
 interface TelegramWebApp {
   ready: () => void;
@@ -13,9 +14,7 @@ interface TelegramWebApp {
   setHeaderColor: (colorKey: string) => void;
 }
 declare global {
-  interface Window {
-    Telegram?: { WebApp?: TelegramWebApp };
-  }
+  interface Window { Telegram?: { WebApp?: TelegramWebApp }; }
 }
 
 /* ---------------------------------- TAGS UI ---------------------------------- */
@@ -24,17 +23,8 @@ const TAG_LABEL: Record<Tag, string> = {
   verified: "Verified by the FreeSpins.Casino Team",
 };
 
-function TagChip({
-  tag,
-  active,
-  onClick,
-}: {
-  tag: Tag;
-  active: boolean;
-  onClick: (t: Tag) => void;
-}) {
-  const base =
-    "inline-flex items-center rounded-full border text-xs font-medium px-3 py-1 transition";
+function TagChip({ tag, active, onClick }: { tag: Tag; active: boolean; onClick: (t: Tag) => void }) {
+  const base = "inline-flex items-center rounded-full border text-xs font-medium px-3 py-1 transition";
   const activeCls =
     tag === "crypto"
       ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
@@ -44,14 +34,35 @@ function TagChip({
       ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
       : "bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100";
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={() => onClick(tag)}
-      className={`${base} ${active ? activeCls : idleCls}`}
-    >
+    <button type="button" aria-pressed={active} onClick={() => onClick(tag)} className={`${base} ${active ? activeCls : idleCls}`}>
       {TAG_LABEL[tag]}
     </button>
+  );
+}
+
+/* ---------------------------- COIN META + UI ------------------------------- */
+const COIN_META: Record<Coin, { label: string; src: string }> = {
+  btc:  { label: "Bitcoin",     src: "/logos/bitcoin.png" },
+  eth:  { label: "Ethereum",    src: "/logos/eth.png" },
+  sol:  { label: "Solana",      src: "/logos/solana.webp" },
+  usdt: { label: "Tether (USDT)", src: "/logos/usdt.png" },
+};
+
+function CoinRow({ coins }: { coins: Coin[] }) {
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      {coins.map((c) => (
+        <img
+          key={c}
+          src={COIN_META[c].src}
+          alt={COIN_META[c].label}
+          title={COIN_META[c].label}              // ✅ simple tooltip
+          className="h-5 w-5 rounded-[4px] border border-neutral-200 bg-white object-contain"
+        />
+      ))}
+      <span className="text-xs text-neutral-500">+ More</span>
+      <span className="sr-only">Other methods may also be supported</span>
+    </div>
   );
 }
 
@@ -67,6 +78,7 @@ type CasinoOffer = {
   pill?: "NEW" | "HOT";
   note?: string;
   tags: Tag[];
+  accepted: Coin[]; // ✅ new
 };
 
 const OFFERS: CasinoOffer[] = [
@@ -81,6 +93,7 @@ const OFFERS: CasinoOffer[] = [
     spins: 300,
     note: "Deposit required",
     tags: ["crypto", "verified"],
+    accepted: ["btc", "eth", "sol", "usdt"],
   },
   {
     id: "1xbit",
@@ -92,6 +105,7 @@ const OFFERS: CasinoOffer[] = [
     spins: 250,
     note: "Deposit required",
     tags: ["crypto"],
+    accepted: ["btc", "eth", "usdt"],
   },
   {
     id: "betsio",
@@ -103,6 +117,7 @@ const OFFERS: CasinoOffer[] = [
     spins: 225,
     note: "Deposit required",
     tags: ["crypto", "verified"],
+    accepted: ["btc", "eth", "sol"],
   },
   {
     id: "bitstarz",
@@ -115,6 +130,7 @@ const OFFERS: CasinoOffer[] = [
     spins: 180,
     note: "Deposit required",
     tags: ["crypto", "verified"],
+    accepted: ["btc", "eth", "sol", "usdt"],
   },
   {
     id: "wildio",
@@ -126,15 +142,14 @@ const OFFERS: CasinoOffer[] = [
     spins: 75,
     note: "Deposit required",
     tags: ["crypto", "verified"],
+    accepted: ["btc", "eth", "sol", "usdt"],
   },
 ];
 
 /* --------------------------------- HELPERS -------------------------------- */
 function pillClasses(pill?: CasinoOffer["pill"]) {
-  if (pill === "NEW")
-    return "text-[11px] px-2 py-[3px] rounded-full bg-purple-100 text-purple-700 border border-purple-200";
-  if (pill === "HOT")
-    return "text-[11px] px-2 py-[3px] rounded-full bg-rose-100 text-rose-700 border border-rose-200";
+  if (pill === "NEW") return "text-[11px] px-2 py-[3px] rounded-full bg-purple-100 text-purple-700 border border-purple-200";
+  if (pill === "HOT") return "text-[11px] px-2 py-[3px] rounded-full bg-rose-100 text-rose-700 border border-rose-200";
   return "";
 }
 function wageringToNumber(w: string) {
@@ -164,111 +179,47 @@ export default function Home() {
       return n;
     });
 
-  // Core filtering/sorting
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let rows = OFFERS.filter((o) => (q ? o.brand.toLowerCase().includes(q) : true));
-
-    if (activeTags.size > 0) {
-      rows = rows.filter((o) => [...activeTags].every((t) => o.tags.includes(t)));
-    }
-
+    if (activeTags.size > 0) rows = rows.filter((o) => [...activeTags].every((t) => o.tags.includes(t)));
     if (sortBy === "spins") rows = [...rows].sort((a, b) => b.spins - a.spins);
-    else if (sortBy === "wager")
-      rows = [...rows].sort((a, b) => wageringToNumber(a.wagering) - wageringToNumber(b.wagering));
+    else if (sortBy === "wager") rows = [...rows].sort((a, b) => wageringToNumber(a.wagering) - wageringToNumber(b.wagering));
     else rows = [...rows].sort((a, b) => a.brand.localeCompare(b.brand));
-
     return rows;
   }, [query, sortBy, activeTags]);
 
-  // ----- Top Pick (BitStarz) -----
+  /* ---------- Top Pick (BitStarz) ---------- */
   const TOP_PICK_ID = "bitstarz";
   const topPick = useMemo(() => OFFERS.find((o) => o.id === TOP_PICK_ID), []);
-  const topPickInFiltered = useMemo(
-    () => filtered.find((o) => o.id === TOP_PICK_ID),
-    [filtered]
-  );
-  const rowsWithoutTopPick = useMemo(
-    () => filtered.filter((o) => o.id !== TOP_PICK_ID),
-    [filtered]
-  );
+  const topPickInFiltered = useMemo(() => filtered.find((o) => o.id === TOP_PICK_ID), [filtered]);
+  const rowsWithoutTopPick = useMemo(() => filtered.filter((o) => o.id !== TOP_PICK_ID), [filtered]);
 
   return (
     <div className="min-h-screen text-neutral-900 relative">
-      {/* animated light purple/blue background + top fade */}
+      {/* animated background + top fade */}
       <style jsx global>{`
-        html,
-        body {
-          height: 100%;
-        }
-        body {
-          background: none;
-        }
+        html, body { height: 100%; }
+        body { background: none; }
         body::before {
-          content: "";
-          position: fixed;
-          inset: 0;
-          z-index: -2;
-          background: radial-gradient(900px 500px at 15% 10%, rgba(138, 58, 255, 0.2), transparent 60%),
-            radial-gradient(800px 420px at 85% 15%, rgba(99, 102, 241, 0.18), transparent 60%),
-            radial-gradient(1000px 520px at 40% 90%, rgba(59, 130, 246, 0.14), transparent 60%),
+          content: ""; position: fixed; inset: 0; z-index: -2;
+          background:
+            radial-gradient(900px 500px at 15% 10%, rgba(138,58,255,.20), transparent 60%),
+            radial-gradient(800px 420px at 85% 15%, rgba(99,102,241,.18), transparent 60%),
+            radial-gradient(1000px 520px at 40% 90%, rgba(59,130,246,.14), transparent 60%),
             linear-gradient(-45deg, #f1eaff, #e7f0ff, #eadfff, #e6f2ff, #f1eaff);
           background-size: 200% 200%, 200% 200%, 200% 200%, 300% 300%;
-          animation: float1 22s ease-in-out infinite, float2 28s ease-in-out infinite, float3 26s ease-in-out infinite,
-            sweep 32s linear infinite;
+          animation: float1 22s ease-in-out infinite, float2 28s ease-in-out infinite, float3 26s ease-in-out infinite, sweep 32s linear infinite;
         }
         body::after {
-          content: "";
-          position: fixed;
-          inset: 0 0 60% 0;
-          z-index: -1;
-          background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+          content: ""; position: fixed; inset: 0 0 60% 0; z-index: -1;
+          background: linear-gradient(to bottom, rgba(255,255,255,.70), rgba(255,255,255,0));
           pointer-events: none;
         }
-        @keyframes float1 {
-          0% {
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
-          }
-          50% {
-            background-position: 70% 50%, 10% 40%, 30% 60%, 100% 50%;
-          }
-          100% {
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
-          }
-        }
-        @keyframes float2 {
-          0% {
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
-          }
-          50% {
-            background-position: 20% 30%, 80% 20%, 60% 70%, 100% 50%;
-          }
-          100% {
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
-          }
-        }
-        @keyframes float3 {
-          0% {
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
-          }
-          50% {
-            background-position: 40% 80%, 10% 60%, 80% 40%, 100% 50%;
-          }
-          100% {
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%;
-          }
-        }
-        @keyframes sweep {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
+        @keyframes float1 { 0%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} 50%{background-position:70% 50%,10% 40%,30% 60%,100% 50%} 100%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} }
+        @keyframes float2 { 0%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} 50%{background-position:20% 30%,80% 20%,60% 70%,100% 50%} 100%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} }
+        @keyframes float3 { 0%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} 50%{background-position:40% 80%,10% 60%,80% 40%,100% 50%} 100%{background-position:0% 0%,0% 0%,0% 0%,0% 50%} }
+        @keyframes sweep  { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
       `}</style>
 
       {/* Header (glass) */}
@@ -285,14 +236,13 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Chips */}
             <div className="flex items-center gap-3">
               <TagChip tag="crypto" active={activeTags.has("crypto")} onClick={toggleTag} />
               <TagChip tag="verified" active={activeTags.has("verified")} onClick={toggleTag} />
             </div>
           </div>
 
-          {/* Search + Sort */}
+          {/* Search + Sort (mobile-safe) */}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative flex-1 min-w-0">
@@ -329,11 +279,9 @@ export default function Home() {
 
       {/* MAIN */}
       <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-6 pb-16">
-        {/* ------- TOP PICK (glowing green) ------- */}
+        {/* TOP PICK (BitStarz) */}
         {topPick && topPickInFiltered && (
-          <section
-            className="mb-6 rounded-2xl border border-emerald-300/60 bg-white/90 backdrop-blur-sm ring-2 ring-emerald-400/60 shadow-[0_0_0_8px_rgba(16,185,129,0.10),0_12px_28px_rgba(16,185,129,0.22)]"
-          >
+          <section className="mb-6 rounded-2xl border border-emerald-300/60 bg-white/90 backdrop-blur-sm ring-2 ring-emerald-400/60 shadow-[0_0_0_8px_rgba(16,185,129,0.10),0_12px_28px_rgba(16,185,129,0.22)]">
             <div className="px-5 pt-4 pb-2 flex items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold px-2 py-[3px] border border-emerald-200">
                 TOP PICK
@@ -357,6 +305,7 @@ export default function Home() {
               <div>
                 <div className="font-medium">{topPick.offer}</div>
                 {topPick.note && <div className="text-xs text-neutral-500 mt-0.5">{topPick.note}</div>}
+                <CoinRow coins={topPick.accepted} /> {/* ✅ accepted cryptos */}
               </div>
 
               {/* Wagering */}
@@ -385,21 +334,15 @@ export default function Home() {
           </section>
         )}
 
-        {/* ------- TABLE (list) ------- */}
+        {/* LIST */}
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white/85 backdrop-blur-sm shadow-sm">
           <div className="hidden sm:grid sm:grid-cols-[2fr_2fr_1fr_140px] items-center px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50/60">
-            <div>Casino</div>
-            <div>Offer</div>
-            <div>Wagering</div>
-            <div className="text-right">Bonus</div>
+            <div>Casino</div><div>Offer</div><div>Wagering</div><div className="text-right">Bonus</div>
           </div>
 
           <ul className="divide-y divide-neutral-200">
             {rowsWithoutTopPick.map((o) => (
-              <li
-                key={o.id}
-                className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_140px] gap-y-3 sm:gap-y-0 items-center px-5 py-4"
-              >
+              <li key={o.id} className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_140px] gap-y-3 sm:gap-y-0 items-center px-5 py-4">
                 {/* Brand */}
                 <div className="flex items-center gap-3">
                   <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-neutral-200 bg-white">
@@ -415,6 +358,7 @@ export default function Home() {
                 <div>
                   <div className="font-medium">{o.offer}</div>
                   {o.note && <div className="text-xs text-neutral-500 mt-0.5">{o.note}</div>}
+                  <CoinRow coins={o.accepted} /> {/* ✅ accepted cryptos */}
                 </div>
 
                 {/* Wagering */}
