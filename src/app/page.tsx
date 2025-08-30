@@ -86,16 +86,17 @@ export default function Home() {
         {sortedCasinos.map((c) => (
           <div
             key={c.id}
-            className={`relative flex items-center justify-between bg-white rounded-xl shadow-md p-5 ${
-              c.topPick ? "border-2 border-green-400 shadow-green-200" : ""
+            /* CHANGE: use 2-col grid so CTA is always aligned on the right */
+            className={`relative grid grid-cols-[1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 ${
+              c.topPick ? "border-2 border-green-400 shadow-green-200" : "border border-neutral-200"
             }`}
           >
-            {/* Logo + Info */}
-            <div className="flex items-center space-x-4">
-              <Image src={c.logo} alt={c.name} width={50} height={50} className="rounded-md" />
-              <div>
+            {/* LEFT: Logo + Info */}
+            <div className="flex items-center space-x-4 min-w-0">
+              <Image src={c.logo} alt={c.name} width={50} height={50} className="rounded-md shrink-0" />
+              <div className="min-w-0">
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-semibold">{c.name}</h2>
+                  <h2 className="text-lg font-semibold truncate">{c.name}</h2>
                   {c.label && (
                     <span
                       className={`px-2 py-0.5 text-xs rounded-full ${
@@ -108,6 +109,7 @@ export default function Home() {
                 </div>
                 <p className="text-sm text-gray-600">{c.offer}</p>
                 <p className="text-xs text-gray-400">Deposit required</p>
+
                 {/* Crypto Logos */}
                 <div className="flex items-center space-x-2 mt-2">
                   {c.cryptos.map((crypto, i) => (
@@ -118,12 +120,14 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Claim Bonus Button */}
+            {/* RIGHT: Claim Bonus Button (fixed size, pinned right) */}
             <a
               href={c.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md whitespace-nowrap"
+              className="justify-self-end inline-flex items-center justify-center h-12 w-44 rounded-xl
+                         bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-md whitespace-nowrap
+                         active:scale-[.98] transition"
             >
               Claim Bonus!
             </a>
@@ -147,7 +151,7 @@ export default function Home() {
           <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="underline">
             BeGambleAware
           </a>{" "}
-          or{" "}
+        or{" "}
           <a href="https://www.gamblingtherapy.org" target="_blank" rel="noopener noreferrer" className="underline">
             Gambling Therapy
           </a>
