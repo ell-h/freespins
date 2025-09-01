@@ -4,7 +4,9 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
-/* ------------------------------ Types & Data ------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*                                   TYPES                                    */
+/* -------------------------------------------------------------------------- */
 
 type Casino = {
   id: number;
@@ -18,6 +20,14 @@ type Casino = {
   topPick?: boolean;
   reviewUrl?: string;
 };
+
+type Guide = { id: number; title: string; url: string; img: string };
+
+type TabKey = "offers" | "reviews" | "guides" | "dailyspin";
+
+/* -------------------------------------------------------------------------- */
+/*                                   DATA                                     */
+/* -------------------------------------------------------------------------- */
 
 const casinos: Casino[] = [
   {
@@ -75,7 +85,50 @@ const casinos: Casino[] = [
   },
 ];
 
-type Guide = { id: number; title: string; url: string; img: string };
+const casinoDetails: Record<string, string[]> = {
+  "BitStarz": [
+    "Launched: 2014",
+    "License: Curaçao eGaming",
+    "Deposit methods: Bitcoin, Ethereum, Litecoin, Dogecoin, credit cards, and more",
+    "Withdrawal speed: Often within 10 minutes for crypto transactions",
+    "Minimum deposit: €20 (or equivalent in crypto)",
+    "Languages supported: English, Russian, Japanese + more",
+    "Key strength: Seamless support for both fiat and cryptocurrencies",
+  ],
+  "Bets.io": [
+    "Established: 2021 (Curaçao eGaming)",
+    "Accepts: BTC, ETH, USDT, LTC, DOGE + more",
+    "Welcome: 225% up to three deposits + 225 free spins",
+    "Slots: NetEnt, Pragmatic Play, Play’n GO + more",
+    "Live casino: Evolution, Ezugi",
+    "Perks: Cashback & ongoing bitcoin bonuses",
+    "Fast withdrawals with blockchain confirmations",
+  ],
+  "Wild.io": [
+    "Welcome: 120% up to $5,000 + 75 free spins",
+    "Launched: 2022 (Curaçao eGaming)",
+    "Payments: BTC, ETH, LTC, USDT, BNB, XRP, DOGE, SOL, ADA, TRX, BCH, USDC, TON + more",
+    "Minimum deposit: $20 (or crypto equivalent)",
+    "Withdrawals: Usually minutes (blockchain confirmations)",
+    "Languages: EN, ES, DE, JA, PT, RU + more",
+  ],
+  "Winz.io": [
+    "Zero wagering requirements on all promotions",
+    "Wheel of Winz welcome with cash prizes up to $10,000",
+    "Thousands of slots (Pragmatic, NetEnt, Play’n GO)",
+    "Live casino: Evolution & Pragmatic Live",
+    "Instant crypto deposits & withdrawals",
+    "Supports: BTC, ETH, LTC, DOGE, USDT + more",
+  ],
+  "1xBit.com": [
+    "Established: 2016 (Curaçao eGaming)",
+    "Accepts: BTC, ETH, USDT, DOGE + 20+ other cryptos",
+    "Huge slots library (NetEnt, Pragmatic, Play’n GO)",
+    "Live casino: Evolution & Ezugi",
+    "Multi-deposit welcome with free spins",
+    "Loyalty: Cashback, bonus points, exclusive rewards",
+  ],
+};
 
 const guides: Guide[] = [
   {
@@ -98,38 +151,43 @@ const guides: Guide[] = [
   },
 ];
 
-/* ------------------------------ Daily Spin Setup ------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*                                DAILY SPIN                                  */
+/* -------------------------------------------------------------------------- */
 
-/** Wheel slices (emoji). */
 const SLICES = ["❓", "💰", "🎁", "❓", "💰", "❓", "🎁", "❓"] as const;
 type SliceSymbol = (typeof SLICES)[number];
 
-type OutcomeKind = "lose" | "bonus" | "stars";
-
-/** Heavily weighted to losing, occasional bonus/stars. */
-const outcomeMap: Record<SliceSymbol, { kind: OutcomeKind; label: string; weight: number }> = {
-  "❓": { kind: "lose",  label: "Better luck next time", weight: 85 },
-  "💰": { kind: "bonus", label: "🎰 Free Spins Bonus",  weight: 10 },
-  "🎁": { kind: "stars", label: "⭐ Telegram Stars Gift", weight: 5  },
+const outcomeMap: Record<
+  SliceSymbol,
+  { type: "lose" | "spins" | "stars"; label: string; weight: number }
+> = {
+  "❓": { type: "lose",  label: "Better luck next time", weight: 85 },
+  "💰": { type: "spins", label: "🎰 Free Spins Bonus",   weight: 10 },
+  "🎁": { type: "stars", label: "⭐ Telegram Stars Gift", weight: 5  },
 };
 
-/** Cooldown key (localStorage). If in Telegram, scope to user id. */
+// typed global for Telegram user id (no `any`)
+type TGGlobal = {
+  Telegram?: {
+    WebApp?: {
+      initDataUnsafe?: {
+        user?: { id?: number }
+      }
+    }
+  }
+};
+
 const cooldownKey = () => {
-  const tg = (globalThis as any)?.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-  return tg ? `dailySpinLast_${tg}` : "dailySpinLast";
+  const tgUserId = (globalThis as TGGlobal).Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  return tgUserId ? `dailySpinLast_${tgUserId}` : "dailySpinLast";
 };
 
 const COOLDOWN_HOURS = 24;
 
-/** Pick a random affiliate link from current casinos. */
-function randomAffiliateLink(): string {
-  const links = casinos.map(c => c.link).filter(Boolean);
-  return links[Math.floor(Math.random() * links.length)];
-}
-
-/* ---------------------------------- UI ---------------------------------- */
-
-type TabKey = "offers" | "reviews" | "guides" | "dailyspin";
+/* -------------------------------------------------------------------------- */
+/*                                  PAGE                                      */
+/* -------------------------------------------------------------------------- */
 
 export default function Home() {
   const [active, setActive] = useState<TabKey>("offers");
@@ -141,19 +199,24 @@ export default function Home() {
     return arr;
   }, []);
 
-  /* ------------------------------ Daily Spin State ------------------------------ */
+  // Offer card expand/collapse (single tap)
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const toggleExpanded = (id: number) => setExpandedId((prev) => (prev === id ? null : id));
+
+  /* ----------------------------- Daily Spin state ---------------------------- */
+
   const wheelRef = useRef<HTMLDivElement | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [resultLabel, setResultLabel] = useState<string | null>(null);
   const [resultLink, setResultLink] = useState<string | undefined>(undefined);
-  const [cooldownLeft, setCooldownLeft] = useState<number>(0); // minutes left
+  const [cooldownLeft, setCooldownLeft] = useState<number>(0); // minutes
 
-  // Check cooldown on load and periodically
+  // cooldown check
   useEffect(() => {
     const check = () => {
       const key = cooldownKey();
-      const last = localStorage.getItem(key);
+      const last = typeof window !== "undefined" ? localStorage.getItem(key) : null;
       if (!last) {
         setCooldownLeft(0);
         return;
@@ -167,12 +230,12 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
-  // Brand-colored wheel background
+  // wheel paint
   const wheelBackground = useMemo(() => {
     const colors = ["#7A1CF6", "#8E6CF8", "#7A1CF6", "#9CC2FF", "#7A1CF6", "#8E6CF8", "#7A1CF6", "#9CC2FF"];
     const n = SLICES.length;
     const step = 360 / n;
-    let parts: string[] = [];
+    const parts: string[] = [];
     for (let i = 0; i < n; i++) {
       const from = i * step;
       const to = (i + 1) * step;
@@ -181,9 +244,8 @@ export default function Home() {
     return `conic-gradient(${parts.join(",")})`;
   }, []);
 
-  // Weighted pick of slice index
   const pickSliceIndex = () => {
-    const weights = SLICES.map((sym) => outcomeMap[sym].weight);
+    const weights = SLICES.map((s) => outcomeMap[s].weight);
     const total = weights.reduce((a, b) => a + b, 0);
     let r = Math.random() * total;
     for (let i = 0; i < weights.length; i++) {
@@ -193,7 +255,6 @@ export default function Home() {
     return SLICES.length - 1;
   };
 
-  // Spin
   const onSpin = () => {
     if (spinning) return;
     if (cooldownLeft > 0) return;
@@ -201,10 +262,9 @@ export default function Home() {
     const winIndex = pickSliceIndex();
     const n = SLICES.length;
     const step = 360 / n;
-    const sliceCenterFromTop = winIndex * step + step / 2;
-
-    const extra = 360 * (5 + Math.floor(Math.random() * 3)); // 5–7 spins
-    const target = -(extra + sliceCenterFromTop); // spin clockwise under pointer
+    const center = winIndex * step + step / 2;
+    const extra = 360 * (5 + Math.floor(Math.random() * 3));
+    const target = -(extra + center); // clockwise
 
     setResultLabel(null);
     setResultLink(undefined);
@@ -212,37 +272,35 @@ export default function Home() {
     setRotation((prev) => prev + target);
   };
 
-  // End of spin: compute result, set cooldown, maybe open link
   const onTransitionEnd = () => {
     setSpinning(false);
 
-    // Normalize current angle to [0, 360)
+    // normalize to [0,360)
     const angle = ((rotation % 360) + 360) % 360;
-    const n = SLICES.length;
-    const step = 360 / n;
-
-    // Pointer is at 0deg. Because we spun NEGATIVE, index is:
-    const index = Math.floor((360 - angle) / step) % n;
+    const step = 360 / SLICES.length;
+    const index = Math.floor((360 - angle) / step) % SLICES.length;
 
     const sym = SLICES[index] as SliceSymbol;
     const outcome = outcomeMap[sym];
 
     setResultLabel(outcome.label);
 
-    if (outcome.kind === "bonus") {
-      // 👉 random casino affiliate link
-      setResultLink(randomAffiliateLink());
-    } else if (outcome.kind === "stars") {
-      setResultLink(undefined); // integrate Stars claim flow later
+    if (outcome.type === "spins") {
+      // choose a random affiliate link from current offers
+      const pool = sortedCasinos.map((c) => c.link);
+      const link = pool[Math.floor(Math.random() * pool.length)];
+      setResultLink(link);
     } else {
       setResultLink(undefined);
     }
 
-    localStorage.setItem(cooldownKey(), String(Date.now()));
-    setCooldownLeft(COOLDOWN_HOURS * 60); // minutes
+    // start cooldown
+    if (typeof window !== "undefined") {
+      localStorage.setItem(cooldownKey(), String(Date.now()));
+    }
+    setCooldownLeft(COOLDOWN_HOURS * 60);
   };
 
-  // Cooldown display
   const cooldownText = useMemo(() => {
     if (cooldownLeft <= 0) return "";
     const h = Math.floor(cooldownLeft / 60);
@@ -251,7 +309,9 @@ export default function Home() {
     return `${m}m`;
   }, [cooldownLeft]);
 
-  /* ---------------------------------- Render ---------------------------------- */
+  /* -------------------------------------------------------------------------- */
+  /*                                  RENDER                                    */
+  /* -------------------------------------------------------------------------- */
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-200 via-purple-100 to-blue-200 p-6 flex flex-col">
@@ -280,9 +340,9 @@ export default function Home() {
       <div className="mx-auto w-full max-w-4xl mb-5">
         <div className="grid grid-cols-4 rounded-xl overflow-hidden border border-purple-200 bg-white shadow-sm">
           {[
-            { key: "offers", label: "Offers" },
-            { key: "reviews", label: "Reviews" },
-            { key: "guides", label: "Guides" },
+            { key: "offers",    label: "Offers" },
+            { key: "reviews",   label: "Reviews" },
+            { key: "guides",    label: "Guides" },
             { key: "dailyspin", label: "🎡 Daily Spin" },
           ].map((t) => (
             <button
@@ -305,55 +365,83 @@ export default function Home() {
         {/* OFFERS */}
         {active === "offers" && (
           <div className="space-y-4">
-            {sortedCasinos.map((c) => (
-              <div
-                key={c.id}
-                className={`relative grid grid-cols-[72px_1fr] sm:grid-cols-[72px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 ${
-                  c.topPick ? "border-2 border-green-400 shadow-green-200" : ""
-                }`}
-              >
-                {c.topPick && (
-                  <div className="absolute -top-3 left-4 bg-white px-2 py-0.5 rounded-full text-green-600 text-sm font-semibold shadow">
-                    ✨ Top Pick
+            {sortedCasinos.map((c) => {
+              const isExpanded = expandedId === c.id;
+              return (
+                <div
+                  key={c.id}
+                  className={`relative grid grid-cols-[72px_1fr] sm:grid-cols-[72px_1fr_auto] items-start gap-4 bg-white rounded-xl shadow-md p-5 ${
+                    c.topPick ? "border-2 border-green-400 shadow-green-200" : ""
+                  }`}
+                >
+                  {/* Top pick badge */}
+                  {c.topPick && (
+                    <div className="absolute -top-3 left-4 bg-white px-2 py-0.5 rounded-full text-green-600 text-sm font-semibold shadow">
+                      ✨ Top Pick
+                    </div>
+                  )}
+
+                  {/* Logo */}
+                  <div className="flex items-start">
+                    <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
                   </div>
-                )}
-                <div className="flex items-start">
-                  <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold">{c.name}</h2>
-                    {c.label && (
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full ${
-                          c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
-                        }`}
-                      >
-                        {c.label}
+
+                  {/* Info + expander */}
+                  <div className="min-w-0">
+                    <button
+                      onClick={() => toggleExpanded(c.id)}
+                      className="flex items-center gap-2 group"
+                    >
+                      <h2 className="text-lg font-semibold">{c.name}</h2>
+                      {c.label && (
+                        <span
+                          className={`px-2 py-0.5 text-xs rounded-full ${
+                            c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
+                          }`}
+                        >
+                          {c.label}
+                        </span>
+                      )}
+                      <span className="ml-1 text-xs text-gray-500 group-hover:text-gray-700">
+                        {isExpanded ? "Hide details" : "Show details"}
                       </span>
+                    </button>
+
+                    <p className="text-sm text-gray-700 mt-0.5">{c.offer}</p>
+                    <p className="text-xs text-gray-400">Deposit required</p>
+
+                    {/* Crypto icons */}
+                    <div className="flex items-center gap-2 mt-2">
+                      {c.cryptos.map((crypto, i) => (
+                        <Image key={i} src={crypto} alt="crypto" width={20} height={20} />
+                      ))}
+                      <span className="text-xs text-gray-500">+ More</span>
+                    </div>
+
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <ul className="mt-3 list-disc pl-5 text-sm text-gray-700 space-y-1">
+                        {(casinoDetails[c.name] ?? []).map((line, i) => (
+                          <li key={i}>{line}</li>
+                        ))}
+                      </ul>
                     )}
                   </div>
-                  <p className="text-sm text-gray-700 mt-0.5">{c.offer}</p>
-                  <p className="text-xs text-gray-400">Deposit required</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {c.cryptos.map((crypto, i) => (
-                      <Image key={i} src={crypto} alt="crypto" width={20} height={20} />
-                    ))}
-                    <span className="text-xs text-gray-500">+ More</span>
+
+                  {/* Button */}
+                  <div className="col-span-2 sm:col-span-1 sm:justify-self-end w-full">
+                    <a
+                      href={c.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[16px] font-extrabold leading-none px-5 py-3 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition"
+                    >
+                      Claim Bonus!
+                    </a>
                   </div>
                 </div>
-                <div className="col-span-2 sm:col-span-1 sm:justify-self-end w-full">
-                  <a
-                    href={c.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-center w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[16px] font-extrabold leading-none px-5 py-3 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition"
-                  >
-                    Claim Bonus!
-                  </a>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -361,7 +449,10 @@ export default function Home() {
         {active === "reviews" && (
           <div className="space-y-4">
             {casinos.map((c) => (
-              <div key={c.id} className="grid grid-cols-[56px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5">
+              <div
+                key={c.id}
+                className="grid grid-cols-[56px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5"
+              >
                 <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
                 <div className="min-w-0">
                   <h3 className="font-semibold text-gray-900">{c.name}</h3>
@@ -380,7 +471,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* GUIDES — full-width image card with text underneath */}
+        {/* GUIDES — full-width thumbnails with text underneath */}
         {active === "guides" && (
           <div className="space-y-6">
             {guides.map((g) => (
@@ -411,7 +502,6 @@ export default function Home() {
         {/* DAILY SPIN */}
         {active === "dailyspin" && (
           <div className="flex flex-col items-center gap-6">
-            {/* Wheel container */}
             <div className="relative">
               {/* Pointer */}
               <div
@@ -434,7 +524,7 @@ export default function Home() {
                   transform: `rotate(${rotation}deg)`,
                 }}
               >
-                {/* Emoji labels in each slice */}
+                {/* Emoji labels */}
                 {SLICES.map((sym, i) => {
                   const step = 360 / SLICES.length;
                   const angle = i * step + step / 2;
@@ -454,7 +544,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Spin button & cooldown */}
             <div className="flex items-center gap-3">
               <button
                 onClick={onSpin}
@@ -465,7 +554,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Result */}
             {resultLabel && (
               <div className="mt-2 text-center">
                 <p className="font-semibold text-lg">{resultLabel}</p>
@@ -483,7 +571,7 @@ export default function Home() {
             )}
 
             <p className="text-xs text-gray-500 mt-2">
-              Spin now for your chance to win free spins bonuses, or Telegram Stars! One spin per day per device (local). In Telegram, cooldown scopes to the signed-in user.
+              One spin per day per device. When running in Telegram, cooldown is scoped to the user.
             </p>
           </div>
         )}
