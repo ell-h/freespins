@@ -11,12 +11,12 @@ type Casino = {
   name: string;
   offer: string;
   wagering: string;
-  link: string;        // affiliate link used in Offers tab
-  logo: string;        // /logos/.. file
+  link: string;
+  logo: string;
   label?: "NEW" | "HOT";
-  cryptos: string[];   // icons
+  cryptos: string[];
   topPick?: boolean;
-  reviewUrl?: string;  // review page (used in Reviews tab)
+  reviewUrl?: string;
 };
 
 const casinos: Casino[] = [
@@ -79,7 +79,7 @@ type Guide = {
   id: number;
   title: string;
   url: string;
-  img: string; // /logos/.. file
+  img: string;
 };
 
 const guides: Guide[] = [
@@ -110,7 +110,6 @@ type TabKey = "offers" | "reviews" | "guides";
 export default function Home() {
   const [active, setActive] = useState<TabKey>("offers");
 
-  // Keep BitStarz at top in Offers
   const sortedCasinos = useMemo(() => {
     const arr = [...casinos];
     arr.sort((a, b) => (b.topPick ? 1 : 0) - (a.topPick ? 1 : 0));
@@ -171,7 +170,7 @@ export default function Home() {
             {sortedCasinos.map((c) => (
               <div
                 key={c.id}
-                className={`relative grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 ${
+                className={`relative grid grid-cols-[72px_1fr] sm:grid-cols-[72px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 ${
                   c.topPick ? "border-2 border-green-400 shadow-green-200" : ""
                 }`}
               >
@@ -182,8 +181,8 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Logo */}
-                <div className="flex sm:block">
+                {/* Logo (left column on all breakpoints) */}
+                <div className="flex items-start">
                   <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
                 </div>
 
@@ -213,8 +212,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Button */}
-                <div className="sm:justify-self-end w-full sm:w-auto">
+                {/* Button: full width under content on mobile; right column on sm+ */}
+                <div className="col-span-2 sm:col-span-1 sm:justify-self-end w-full">
                   <a
                     href={c.link}
                     target="_blank"
@@ -235,14 +234,12 @@ export default function Home() {
             {casinos.map((c) => (
               <div
                 key={c.id}
-                className="grid grid-cols-[auto_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5"
+                className="grid grid-cols-[56px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5"
               >
                 <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
                 <div className="min-w-0">
                   <h3 className="font-semibold text-gray-900">{c.name}</h3>
-                  <p className="text-sm text-gray-600 truncate">
-                    Read our {c.name} review here
-                  </p>
+                  <p className="text-sm text-gray-600 truncate">Read our {c.name} review here</p>
                 </div>
                 <a
                   href={c.reviewUrl!}
@@ -257,29 +254,32 @@ export default function Home() {
           </div>
         )}
 
-        {/* GUIDES */}
+        {/* GUIDES — full-width image card with text underneath */}
         {active === "guides" && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {guides.map((g) => (
               <a
                 key={g.id}
                 href={g.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group grid grid-cols-[96px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition"
+                className="block bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
               >
-                <div className="relative h-24 w-24 overflow-hidden rounded-md">
-                  <Image src={g.img} alt={g.title} fill className="object-cover" />
+                {/* Image full width, fixed aspect */}
+                <div className="relative w-full aspect-[16/9]">
+                  <Image src={g.img} alt={g.title} fill className="object-cover" priority={false} />
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-purple-700 transition">
-                    {g.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 truncate">Read the full guide →</p>
+
+                {/* Text section under image */}
+                <div className="p-5">
+                  <h3 className="font-semibold text-gray-900">{g.title}</h3>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-sm text-gray-600">Read the full guide →</p>
+                    <span className="inline-flex items-center justify-center rounded-lg bg-purple-600 text-white text-sm font-semibold px-4 py-2 hover:bg-purple-700 transition">
+                      Open
+                    </span>
+                  </div>
                 </div>
-                <span className="inline-flex items-center justify-center rounded-lg bg-purple-600 text-white text-sm font-semibold px-4 py-2 group-hover:bg-purple-700 transition">
-                  Open
-                </span>
               </a>
             ))}
           </div>
@@ -295,7 +295,7 @@ export default function Home() {
           <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="underline">
             BeGambleAware
           </a>{" "}
-        or{" "}
+          or{" "}
           <a href="https://www.gamblingtherapy.org" target="_blank" rel="noopener noreferrer" className="underline">
             Gambling Therapy
           </a>
