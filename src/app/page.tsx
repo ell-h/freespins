@@ -55,7 +55,7 @@ const casinos = [
 ];
 
 export default function Home() {
-  // Ensure BitStarz is always at the top
+  // Keep BitStarz at the top
   const sortedCasinos = [...casinos].sort((a, b) => (b.topPick ? 1 : 0) - (a.topPick ? 1 : 0));
 
   return (
@@ -66,7 +66,7 @@ export default function Home() {
           href="https://x.com/FreeSpins2025"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center space-x-2 text-gray-800 hover:text-black"
+          className="flex items-center gap-2 text-gray-800 hover:text-black"
         >
           <Image src="/logos/x.webp" alt="X" width={20} height={20} />
           <span>Follow us on X</span>
@@ -86,58 +86,64 @@ export default function Home() {
         {sortedCasinos.map((c) => (
           <div
             key={c.id}
-            /* CHANGE: use 2-col grid so CTA is always aligned on the right */
-            className={`relative grid grid-cols-[1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 ${
+            className={`relative bg-white rounded-xl shadow-md p-5 ${
               c.topPick ? "border-2 border-green-400 shadow-green-200" : "border border-neutral-200"
             }`}
           >
-            {/* LEFT: Logo + Info */}
-            <div className="flex items-center space-x-4 min-w-0">
-              <Image src={c.logo} alt={c.name} width={50} height={50} className="rounded-md shrink-0" />
-              <div className="min-w-0">
-                <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-semibold truncate">{c.name}</h2>
-                  {c.label && (
-                    <span
-                      className={`px-2 py-0.5 text-xs rounded-full ${
-                        c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {c.label}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">{c.offer}</p>
-                <p className="text-xs text-gray-400">Deposit required</p>
-
-                {/* Crypto Logos */}
-                <div className="flex items-center space-x-2 mt-2">
-                  {c.cryptos.map((crypto, i) => (
-                    <Image key={i} src={crypto} alt="crypto" width={20} height={20} />
-                  ))}
-                  <span className="text-xs text-gray-500">+ More</span>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: Claim Bonus Button (fixed size, pinned right) */}
-            <a
-              href={c.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="justify-self-end inline-flex items-center justify-center h-12 w-44 rounded-xl
-                         bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-md whitespace-nowrap
-                         active:scale-[.98] transition"
-            >
-              Claim Bonus!
-            </a>
-
-            {/* Top Pick Label */}
+            {/* "Top pick" badge */}
             {c.topPick && (
-              <div className="absolute -top-3 left-4 bg-white px-2 py-0.5 rounded-full text-green-600 text-sm font-semibold shadow">
+              <div className="absolute -top-3 left-4 bg-white px-3 py-1 rounded-full text-green-600 text-sm font-semibold shadow">
                 ✨ Top Pick
               </div>
             )}
+
+            {/* Responsive content: column on mobile, row on desktop */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {/* Logo + info */}
+              <div className="flex items-start gap-4 sm:max-w-[62%]">
+                <Image
+                  src={c.logo}
+                  alt={c.name}
+                  width={56}
+                  height={56}
+                  className="rounded-md shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold truncate">{c.name}</h2>
+                    {c.label && (
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${
+                          c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {c.label}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 mt-0.5">{c.offer}</p>
+                  <p className="text-xs text-gray-400">Deposit required</p>
+
+                  {/* Crypto icons */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {c.cryptos.map((crypto, i) => (
+                      <Image key={i} src={crypto} alt="crypto" width={20} height={20} />
+                    ))}
+                    <span className="text-xs text-gray-500 whitespace-nowrap">+ More</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Button (full width on mobile, inline on larger screens) */}
+              <a
+                href={c.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto text-center bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-3 rounded-lg shadow-md"
+              >
+                Claim Bonus!
+              </a>
+            </div>
           </div>
         ))}
       </div>
@@ -151,7 +157,7 @@ export default function Home() {
           <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="underline">
             BeGambleAware
           </a>{" "}
-        or{" "}
+          or{" "}
           <a href="https://www.gamblingtherapy.org" target="_blank" rel="noopener noreferrer" className="underline">
             Gambling Therapy
           </a>
