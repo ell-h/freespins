@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 /* ---------------------------------- DATA ---------------------------------- */
@@ -17,6 +17,7 @@ type Casino = {
   cryptos: string[];
   topPick?: boolean;
   reviewUrl?: string;
+  details?: string[]; // NEW: long-press details
 };
 
 const casinos: Casino[] = [
@@ -31,6 +32,15 @@ const casinos: Casino[] = [
     cryptos: ["/logos/bitcoin.png", "/logos/eth.png", "/logos/solana.webp", "/logos/usdt.png"],
     topPick: true,
     reviewUrl: "https://freespins.casino/casino/bitstarz-casino/",
+    details: [
+      "Launched: 2014",
+      "License: Curaçao eGaming",
+      "Deposit methods: Bitcoin, Ethereum, Litecoin, Dogecoin, credit cards, and more",
+      "Withdrawal speed: Often within 10 minutes for crypto transactions",
+      "Minimum deposit: €20 (or crypto equivalent)",
+      "Languages: English, Russian, Japanese, more",
+      "Key strength: Seamless support for both fiat and crypto",
+    ],
   },
   {
     id: 2,
@@ -42,6 +52,14 @@ const casinos: Casino[] = [
     label: "NEW",
     cryptos: ["/logos/bitcoin.png", "/logos/eth.png", "/logos/solana.webp", "/logos/usdt.png"],
     reviewUrl: "https://freespins.casino/casino/winz-io/",
+    details: [
+      "Zero wagering requirements on all promotions",
+      "‘Wheel of Winz’ with cash prizes up to $10,000",
+      "Thousands of slots (Pragmatic Play, NetEnt, Play’n GO)",
+      "Live casino by Evolution & Pragmatic Play Live",
+      "Instant crypto deposits & withdrawals",
+      "Supports BTC, ETH, LTC, DOGE, USDT and more",
+    ],
   },
   {
     id: 3,
@@ -52,6 +70,14 @@ const casinos: Casino[] = [
     logo: "/logos/1xbit.jpg",
     cryptos: ["/logos/bitcoin.png", "/logos/eth.png", "/logos/usdt.png"],
     reviewUrl: "https://freespins.casino/casino/1xbit/",
+    details: [
+      "Established: 2016 (Curaçao eGaming)",
+      "Accepts BTC, ETH, USDT, DOGE + 20+ cryptos",
+      "Large slots library (NetEnt, Pragmatic, Play’n GO)",
+      "Live casino by Evolution & Ezugi",
+      "Multi-deposit welcome package with free spins",
+      "Loyalty program: cashback, bonus points, rewards",
+    ],
   },
   {
     id: 4,
@@ -62,6 +88,15 @@ const casinos: Casino[] = [
     logo: "/logos/betsio.png",
     cryptos: ["/logos/bitcoin.png", "/logos/eth.png", "/logos/solana.webp"],
     reviewUrl: "https://freespins.casino/casino/bets-io-casino/",
+    details: [
+      "Established: 2021 (Curaçao eGaming)",
+      "Accepts BTC, ETH, USDT, LTC, DOGE, more",
+      "Welcome: 225% up to three deposits + 225 FS",
+      "Slots from NetEnt, Pragmatic, Play’n GO",
+      "Live casino by Evolution & Ezugi",
+      "Cashback & ongoing bitcoin promos",
+      "Fast withdrawals (blockchain confirmations)",
+    ],
   },
   {
     id: 5,
@@ -72,6 +107,13 @@ const casinos: Casino[] = [
     logo: "/logos/wildio.png",
     cryptos: ["/logos/bitcoin.png", "/logos/eth.png", "/logos/solana.webp", "/logos/usdt.png"],
     reviewUrl: "https://freespins.casino/casino/wild-io/",
+    details: [
+      "Launched: 2022 (Curaçao eGaming)",
+      "Payments: BTC, ETH, LTC, USDT, BNB, XRP, DOGE, SOL, ADA, TRX, BCH, USDC, TON, more",
+      "Minimum deposit: $20 (or crypto equivalent)",
+      "Withdrawals: usually minutes (chain confirms)",
+      "Languages: EN, ES, DE, JA, PT, RU, more",
+    ],
   },
 ];
 
@@ -109,6 +151,29 @@ type TabKey = "offers" | "reviews" | "guides";
 
 export default function Home() {
   const [active, setActive] = useState<TabKey>("offers");
+
+  // Long-press state: which card is expanded
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  const startLongPress = (id: number) => {
+    // don’t retrigger if already expanded
+    if (expandedId === id) return;
+    cancelLongPress(id);
+    const t = setTimeout(() => setExpandedId(id), 450); // 450ms hold
+    timersRef.current.set(id, t);
+  };
+  const cancelLongPress = (id: number) => {
+    const t = timersRef.current.get(id);
+    if (t) {
+      clearTimeout(t);
+      timersRef.current.delete(id);
+    }
+  };
+  const cancelAllLongPress = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current.clear();
+  };
 
   const sortedCasinos = useMemo(() => {
     const arr = [...casinos];
@@ -164,67 +229,140 @@ export default function Home() {
 
       {/* Panels */}
       <div className="w-full max-w-4xl mx-auto flex-1">
-        {/* OFFERS */}
+        {/* OFFERS (with long-press) */}
         {active === "offers" && (
           <div className="space-y-4">
-            {sortedCasinos.map((c) => (
-              <div
-                key={c.id}
-                className={`relative grid grid-cols-[72px_1fr] sm:grid-cols-[72px_1fr_auto] items-center gap-4 bg-white rounded-xl shadow-md p-5 ${
-                  c.topPick ? "border-2 border-green-400 shadow-green-200" : ""
-                }`}
-              >
-                {/* Top pick badge */}
-                {c.topPick && (
-                  <div className="absolute -top-3 left-4 bg-white px-2 py-0.5 rounded-full text-green-600 text-sm font-semibold shadow">
-                    ✨ Top Pick
-                  </div>
-                )}
+            {sortedCasinos.map((c) => {
+              const expanded = expandedId === c.id;
 
-                {/* Logo (left column on all breakpoints) */}
-                <div className="flex items-start">
-                  <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
-                </div>
+              return (
+                <div
+                  key={c.id}
+                  className={`relative bg-white rounded-xl shadow-md p-5 transition-all ${
+                    c.topPick ? "border-2 border-green-400 shadow-green-200" : ""
+                  } ${expanded ? "ring-2 ring-purple-300" : ""}`}
+                  // long-press handlers
+                  onPointerDown={() => startLongPress(c.id)}
+                  onPointerUp={() => cancelLongPress(c.id)}
+                  onPointerLeave={() => cancelLongPress(c.id)}
+                  onTouchEnd={() => cancelLongPress(c.id)}
+                  onContextMenu={(e) => e.preventDefault()} // prevent default context menu on mobile long-press
+                  // tap to collapse if expanded
+                  onClick={() => {
+                    if (expanded) setExpandedId(null);
+                  }}
+                >
+                  {/* Top pick badge */}
+                  {c.topPick && !expanded && (
+                    <div className="absolute -top-3 left-4 bg-white px-2 py-0.5 rounded-full text-green-600 text-sm font-semibold shadow">
+                      ✨ Top Pick
+                    </div>
+                  )}
 
-                {/* Info */}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold">{c.name}</h2>
-                    {c.label && (
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full ${
-                          c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
-                        }`}
+                  {/* COLLAPSED (normal) */}
+                  {!expanded && (
+                    <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[72px_1fr_auto] items-center gap-4">
+                      <div className="flex items-start">
+                        <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-semibold">{c.name}</h2>
+                          {c.label && (
+                            <span
+                              className={`px-2 py-0.5 text-xs rounded-full ${
+                                c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
+                              }`}
+                            >
+                              {c.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-700 mt-0.5">{c.offer}</p>
+                        <p className="text-xs text-gray-400">Deposit required</p>
+
+                        <div className="flex items-center gap-2 mt-2">
+                          {c.cryptos.map((crypto, i) => (
+                            <Image key={i} src={crypto} alt="crypto" width={20} height={20} />
+                          ))}
+                          <span className="text-xs text-gray-500">+ More</span>
+                        </div>
+
+                        {/* hint */}
+                        <p className="mt-2 text-[11px] text-gray-400">Long-press to view details</p>
+                      </div>
+
+                      {/* Button: don’t let it trigger card tap */}
+                      <div
+                        className="col-span-2 sm:col-span-1 sm:justify-self-end w-full"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {c.label}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-700 mt-0.5">{c.offer}</p>
-                  <p className="text-xs text-gray-400">Deposit required</p>
+                        <a
+                          href={c.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[16px] font-extrabold leading-none px-5 py-3 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition"
+                        >
+                          Claim Bonus!
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Crypto icons */}
-                  <div className="flex items-center gap-2 mt-2">
-                    {c.cryptos.map((crypto, i) => (
-                      <Image key={i} src={crypto} alt="crypto" width={20} height={20} />
-                    ))}
-                    <span className="text-xs text-gray-500">+ More</span>
-                  </div>
-                </div>
+                  {/* EXPANDED (details view) */}
+                  {expanded && (
+                    <div className="grid grid-cols-[72px_1fr] gap-4">
+                      <div className="flex items-start">
+                        <Image src={c.logo} alt={c.name} width={56} height={56} className="rounded-md" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h2 className="text-lg font-semibold">{c.name}</h2>
+                          {c.label && (
+                            <span
+                              className={`px-2 py-0.5 text-xs rounded-full ${
+                                c.label === "NEW" ? "bg-purple-100 text-purple-600" : "bg-red-100 text-red-600"
+                              }`}
+                            >
+                              {c.label}
+                            </span>
+                          )}
+                        </div>
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                          {c.details?.map((d, i) => (
+                            <li key={i}>{d}</li>
+                          ))}
+                        </ul>
 
-                {/* Button: full width under content on mobile; right column on sm+ */}
-                <div className="col-span-2 sm:col-span-1 sm:justify-self-end w-full">
-                  <a
-                    href={c.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-center w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-[#7A1CF6] hover:bg-[#6a15dc] text-white text-[16px] font-extrabold leading-none px-5 py-3 shadow-[0_6px_14px_rgba(122,28,246,0.35)] active:scale-[.98] transition"
-                  >
-                    Claim Bonus!
-                  </a>
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedId(null);
+                            }}
+                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Close
+                          </button>
+
+                          <a
+                            href={c.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Claim Bonus
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -265,12 +403,9 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="block bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
               >
-                {/* Image full width, fixed aspect */}
                 <div className="relative w-full aspect-[16/9]">
                   <Image src={g.img} alt={g.title} fill className="object-cover" priority={false} />
                 </div>
-
-                {/* Text section under image */}
                 <div className="p-5">
                   <h3 className="font-semibold text-gray-900">{g.title}</h3>
                   <div className="mt-3 flex items-center justify-between gap-3">
